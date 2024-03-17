@@ -1,0 +1,457 @@
+.data
+dc:
+	operand1: .zero 32
+	operand2: .zero 32
+	one:	.zero 7
+	 .byte 1 
+	 .zero 24
+	zero:	.zero 32
+	res: .zero 32
+	tmp_operand1: .zero 32
+	tmp_operand2: .zero 32
+	tmp_256: .zero 32
+	tmp_257: .zero 32
+	tmp_258: .zero 32
+	compare_result: .long 0
+	sign: .long 0
+
+ 
+.text
+
+func:
+	stmg %r6, %r14, -72(%r15)
+	lay %r15, -200(%r15)
+
+
+
+
+	lay %r15, 200(%r15)
+	lmg %r6, %r14, -72(%r15)
+	br %r14
+
+div:
+	stmg %r6, %r14, -72(%r15)
+	lay %r15, -200(%r15)
+
+
+
+
+	lay %r15, 200(%r15)
+	lmg %r6, %r14, -72(%r15)
+	br %r14
+
+
+
+idiv_256:
+	stmg %r6, %r14, -72(%r15)
+	lay %r15, -200(%r15)
+
+
+
+	larl %r6, tmp_operand1
+	lg	%r7, 24(%r6)
+	cghi %r7, 0
+	jhe no_neg_needed
+	brasl %r14, neg_256
+	larl %r7, sign
+
+	no_neg_needed:
+
+	larl %r7, tmp_operand2
+
+
+	lay %r15, 200(%r15)
+	lmg %r6, %r14, -72(%r15)
+	br %r14
+
+
+mul_256:
+	stmg %r6, %r14, -72(%r15)
+	lay %r15, -200(%r15)
+
+
+	lgr %r9, %r7
+	larl %r7, tmp_operand1
+	brasl %r14, copy_256
+
+	lgr %r6, %r9
+	larl %r7, tmp_operand2
+	brasl %r14, copy_256
+
+	larl %r6, one
+	larl %r7, tmp_256
+	brasl %r14, copy_256
+
+	lgr %r7, %r8
+	larl %r6, zero
+	brasl %r14, copy_256
+
+	lgr %r9, %r8
+
+	mul_loop:
+
+		larl %r6, tmp_256
+		larl %r7, tmp_operand2
+		larl %r8, tmp_257
+		brasl %r14, and_256
+
+		larl %r6, tmp_257
+		larl %r7, zero
+		brasl %r14, compare_256
+
+		larl %r1, compare_result
+		lg %r0, 0(%r1)
+		cghi %r0, 0
+		je no_action_mul
+
+
+		larl %r6, tmp_operand1
+		lgr  %r7, %r9
+		lgr	 %r8, %r9
+		brasl %r14, add_256 
+
+
+		no_action_mul:
+		larl %r6, tmp_256
+		brasl %r14, shift_left_256
+
+		larl %r6, tmp_operand1
+		brasl %r14, shift_left_256
+
+		larl %r6, tmp_256
+		larl %r7, zero
+		brasl %r14, compare_256
+
+
+		larl %r1, compare_result
+		lg %r0, 0(%r1)
+		cghi %r0, 0
+		jne mul_loop
+
+
+
+
+	lay %r15, 200(%r15)
+	lmg %r6, %r14, -72(%r15)
+	br %r14
+
+
+compare_256:
+	stmg %r6, %r14, -72(%r15)
+	lay %r15, -200(%r15)
+
+
+	lg %r5, 24(%r6)
+	lg %r2, 24(%r7)
+	cgr	%r5, %r2
+	jh load_one
+	jl	load_neg_one
+
+	lg %r5, 16(%r6)
+	lg %r2, 16(%r7)
+	clgr	%r5, %r2
+	jh load_one
+	jl	load_neg_one
+
+	lg %r5, 8(%r6)
+	lg %r2, 8(%r7)
+	clgr	%r5, %r2
+	jh load_one
+	jl	load_neg_one
+
+	lg %r5, 0(%r6)
+	lg %r2, 0(%r7)
+	clgr	%r5, %r2
+	jh load_one
+	jl	load_neg_one
+
+	lghi %r3, 0
+	larl %r2, compare_result
+	stg %r3, 0(%r2)
+	j end_compare
+
+	load_neg_one:
+	lghi %r3, -1
+	larl %r2, compare_result
+	stg %r3, 0(%r2)
+	j end_compare
+
+	load_one:	
+	lghi %r3, 1
+	larl %r2, compare_result
+	stg %r3, 0(%r2)
+
+
+	end_compare:
+
+	lay %r15, 200(%r15)
+	lmg %r6, %r14, -72(%r15)
+	br %r14
+
+
+and_256:
+	stmg %r6, %r14, -72(%r15)
+	lay %r15, -200(%r15)
+	
+
+	lg %r5, 0(%r6)
+	lg %r2, 0(%r7)
+	ngr	%r5, %r2
+	stg %r5, 0(%r8)
+
+	lg %r5, 8(%r6)
+	lg %r2, 8(%r7)
+	ngr	%r5, %r2
+	stg %r5, 8(%r8)
+
+	lg %r5, 16(%r6)
+	lg %r2, 16(%r7)
+	ngr	%r5, %r2
+	stg %r5, 16(%r8)
+
+	lg %r5, 24(%r6)
+	lg %r2, 24(%r7)
+	ngr	%r5, %r2
+	stg %r5, 24(%r8)
+
+	lay %r15, 200(%r15)
+	lmg %r6, %r14, -72(%r15)
+	br %r14
+
+
+shift_left_256:
+	stmg %r6, %r14, -72(%r15)
+	lay %r15, -200(%r15)
+	
+	lgr %r7, %r6
+	lgr %r8, %r6
+	brasl %r14, add_256
+
+	lay %r15, 200(%r15)
+	lmg %r6, %r14, -72(%r15)
+	br %r14
+
+
+subtract_256:
+	stmg %r6, %r14, -72(%r15)
+	lay %r15, -200(%r15)
+	
+	lgr %r9, %r6
+	lgr %r6, %r7
+	larl %r7, tmp_operand2
+	brasl %r14, copy_256
+	
+	larl %r6, tmp_operand2
+	brasl %r14, neg_256
+
+	lgr %r6, %r9
+	larl %r7, tmp_operand2
+
+	brasl %r14, add_256
+
+
+	lay %r15, 200(%r15)
+	lmg %r6, %r14, -72(%r15)
+	br %r14
+
+
+
+copy_256:
+	stmg %r6, %r14, -72(%r15)
+	lay %r15, -200(%r15)
+
+	lg %r9, 0(%r6)
+	stg %r9, 0(%r7)
+
+	lg %r9, 8(%r6)
+	stg %r9, 8(%r7)
+	
+	lg %r9, 16(%r6)
+	stg %r9, 16(%r7)
+	
+	lg %r9, 24(%r6)
+	stg %r9, 24(%r7)
+
+
+	lay %r15, 200(%r15)
+	lmg %r6, %r14, -72(%r15)
+	br %r14
+
+
+neg_256:
+	stmg %r6, %r14, -72(%r15)
+	lay %r15, -200(%r15)
+
+	lghi %r2, -1
+
+	lg %r5, 0(%r6)
+	xgr	%r5, %r2
+	stg %r5, 0(%r6)
+
+	lg %r5, 8(%r6)
+	xgr %r5, %r2
+	stg %r5, 8(%r6)
+
+	lg %r5, 16(%r6)
+	xgr %r5, %r2
+	stg %r5, 16(%r6)
+
+	lg %r5, 24(%r6)
+	xgr %r5, %r2
+	stg %r5, 24(%r6)
+
+
+	larl %r7, one
+	lgr %r8, %r6
+	brasl %r14, add_256
+	
+
+	lay %r15, 200(%r15)
+	lmg %r6, %r14, -72(%r15)
+	br %r14
+
+
+print_binary_64:
+	stmg %r6, %r14, -72(%r15)
+	lay %r15, -200(%r15)
+
+	xgr %r9, %r9
+	aghi %r9, 1
+	sllg %r9,%r9, 63
+print_bin_loop:
+	stg %r2, 0(%r15)
+	ngr %r2, %r9
+	cghi %r2, 0
+	je print_zero_bit
+	lghi %r2, '1'
+	brasl %r14, putchar
+	j done_print_bit
+print_zero_bit:
+	lghi %r2, '0'
+	brasl %r14, putchar
+done_print_bit:
+	lg %r2, 0(%r15)
+	srlg %r9, %r9,  1
+	cghi %r9, 0
+	jne print_bin_loop
+
+	lghi %r2, 10
+	brasl %r14, putchar
+	
+
+	lay %r15, 200(%r15)
+	lmg %r6, %r14, -72(%r15)
+	br %r14
+
+
+add_with_carry:
+	stmg %r9, %r14, -72(%r15)
+	lay %r15, -200(%r15)
+
+	stg %r6, 0(%r15)
+	stg %r7, 8(%r15)
+	stg %r8, 16(%r15)
+	xgr %r8, %r8
+
+	ag %r6, 8(%r15)
+	
+	clg %r6, 0(%r15)
+	jhe skip_add_carry1
+	lghi %r8, 1
+
+skip_add_carry1:
+	ag %r6, 16(%r15)
+	clg %r6, 0(%r15)
+	jhe skip_add_carry2
+	lghi %r8, 1
+
+skip_add_carry2:
+	lay %r15, 200(%r15)
+	lmg %r9, %r14, -72(%r15)
+	br %r14
+
+
+add_256:
+	stmg     %r11, %r15, -40(%r15)
+	lay %r15, -200(%r15)
+
+	stg %r6, 0(%r15)
+	stg %r7, 8(%r15)
+	stg %r8, 16(%r15)
+
+
+	lg %r6, 0(%r15)
+	lg %r7, 8(%r15)
+	lg %r6, 0(%r6)
+	lg %r7, 0(%r7)
+	xgr	%r8, %r8
+	brasl %r14, add_with_carry
+	lg %r9, 16(%r15)
+	stg %r6, 0(%r9)
+
+
+
+	lg %r6, 0(%r15)
+	lg %r7, 8(%r15)
+	lg %r6, 8(%r6)
+	lg %r7, 8(%r7)
+	brasl %r14, add_with_carry
+	lg %r9, 16(%r15)
+	stg %r6, 8(%r9)
+
+
+	lg %r6, 0(%r15)
+	lg %r7, 8(%r15)
+	lg %r6, 16(%r6)
+	lg %r7, 16(%r7)
+	brasl %r14, add_with_carry
+	lg %r9, 16(%r15)
+	stg %r6, 16(%r9)
+
+
+
+
+	lg %r6, 0(%r15)
+	lg %r7, 8(%r15)
+	lg %r6, 24(%r6)
+	lg %r7, 24(%r7)
+	brasl %r14, add_with_carry
+	lg %r9, 16(%r15)
+	stg %r6, 24(%r9)
+
+
+done_add:
+	lay %r15, 200(%r15)
+	lmg     %r11, %r15, -40(%r15)
+	br %r14
+
+
+.globl asm_main
+	asm_main:
+	stmg %r6, %r14, -72(%r15)
+	lay %r15, -200(%r15)
+
+
+
+
+	larl %r6, operand1
+	lghi %r2, 1
+	stg %r2, 0(%r6)
+	brasl %r14, neg_256
+	
+	larl %r7, operand2
+	lghi %r2, 1
+	stg %r2, 0(%r7)
+
+	larl %r8, res
+	brasl %r14, mul_256
+	
+	
+	larl %r3, res
+	lg %r2, 24(%r3)
+	brasl %r14, print_binary_64
+
+done_all:
+	lay %r15, 200(%r15)
+	lmg %r6, %r14, -72(%r15)
+	br %r14
